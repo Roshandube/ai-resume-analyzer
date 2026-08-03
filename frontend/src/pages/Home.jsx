@@ -5,49 +5,55 @@ function Home() {
   const { token } = useAuth();
 
   return (
-    <div className="bg-gray-50">
-      {/* HERO */}
+    <div className="bg-slate-50 text-slate-900">
+      <section className="mx-auto flex min-h-[72vh] max-w-6xl items-center px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full text-center lg:text-left">
+          <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700">
+            AI-powered career growth
+          </span>
 
-      <section className="min-h-[75vh] flex items-center justify-center px-6">
-        <div className="max-w-4xl text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
             Improve Your Resume
-            <span className="block mt-2">With AI</span>
+            <span className="mt-2 block text-indigo-600">With AI</span>
           </h1>
 
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            Upload your resume and get instant AI-powered feedback, ATS scoring,
-            strengths, weaknesses, and skill recommendations.
+          <p className="mx-auto mt-5 max-w-2xl text-base text-slate-600 sm:text-lg lg:mx-0">
+            Upload your resume and get instant ATS scoring, AI feedback, skill
+            gaps, and role-specific recommendations to stand out in interviews.
           </p>
 
-          <Link
-            to={token ? "/upload" : "/register"}
-            className="inline-block bg-gray-900 text-white px-8 py-4 rounded-lg text-lg hover:bg-gray-700"
-          >
-            Analyze My Resume
-          </Link>
+          <div className="mt-8 flex justify-center lg:justify-start">
+            <Link
+              to={token ? "/upload" : "/register"}
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-slate-700"
+            >
+              Analyze My Resume
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* FEATURES */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+            What You Get
+          </h2>
+        </div>
 
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <h2 className="text-3xl font-bold text-center mb-10">What You Get</h2>
-
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid gap-6 md:grid-cols-3">
           <Feature
             title="ATS Score"
-            description="See how well your resume performs for Applicant Tracking Systems."
+            description="See how well your resume performs with applicant tracking systems and recruiters."
           />
 
           <Feature
             title="AI Feedback"
-            description="Discover your resume's strengths and areas that need improvement."
+            description="Get clear feedback on your strengths, weak areas, and writing quality."
           />
 
           <Feature
             title="Skill Suggestions"
-            description="Identify missing skills that could make your resume stronger."
+            description="Discover the missing skills and keywords that can make your resume stronger."
           />
         </div>
       </section>
@@ -57,10 +63,11 @@ function Home() {
 
 function Feature({ title, description }) {
   return (
-    <div className="bg-white p-7 rounded-xl shadow">
-      <h3 className="text-xl font-semibold mb-3">{title}</h3>
-
-      <p className="text-gray-600">{description}</p>
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/70 sm:p-7">
+      <h3 className="mb-3 text-xl font-semibold text-slate-900">{title}</h3>
+      <p className="text-sm leading-6 text-slate-600 sm:text-base">
+        {description}
+      </p>
     </div>
   );
 }

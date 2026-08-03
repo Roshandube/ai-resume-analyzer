@@ -4,9 +4,73 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-const analyzeResume = async (resumeText, jobDescription = "") => {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const normalizeText = (value, maxLength = 20000) => {
+  if (!value) return "";
+
+  const text = String(value).replace(/\s+/g, " ").trim();
+
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return text.slice(0, maxLength);
+};
+
+const parseGeminiResponse = (response) => {
+  if (!response) {
+    throw new Error("Empty Gemini response");
+  }
+
+  if (typeof response === "string") {
+    return JSON.parse(response);
+  }
+
+  if (response.text) {
+    return JSON.parse(response.text);
+  }
+
+  if (response.candidates?.length) {
+    const text = response.candidates
+      .map(
+        (candidate) =>
+          candidate.content?.parts?.map((part) => part.text || "").join("") ||
+          "",
+      )
+      .join("\n");
+
+    return JSON.parse(text);
+  }
+
+  throw new Error("Gemini response format is unexpected");
+};
+
+const extractJsonFromText = (text) => {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+  if (!jsonMatch) {
+    throw new Error("Gemini response did not include valid JSON");
+  }
+
+  return JSON.parse(jsonMatch[0]);
+};
+
+const MODEL_CANDIDATES = [
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-flash-lite",
+];
+
+const analyzeResume = async (resumeText, jobDescription = "", attempt = 0) => {
   try {
-    const hasJobDescription = jobDescription.trim().length > 0;
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is missing");
+    }
+
+    const safeResumeText = normalizeText(resumeText, 20000);
+    const safeJobDescription = normalizeText(jobDescription, 8000);
+    const hasJobDescription = safeJobDescription.trim().length > 0;
 
     const prompt = `
 You are an expert resume reviewer and ATS-readiness evaluator.
@@ -79,32 +143,70 @@ Return exactly this structure:
 
 RESUME:
 
-${resumeText}
+${safeResumeText}
 
 ${
   hasJobDescription
     ? `
 JOB DESCRIPTION:
 
-${jobDescription}
+${safeJobDescription}
 `
     : ""
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
-      contents: prompt,
-    });
+    let lastError;
 
-    const text = response.text;
+    for (const model of MODEL_CANDIDATES) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+        });
 
-    return JSON.parse(text);
+        const text = response.text || JSON.stringify(response);
+
+        try {
+          return parseGeminiResponse(response);
+        } catch {
+          return extractJsonFromText(text);
+        }
+      } catch (error) {
+        lastError = error;
+        const message = error?.message || "Gemini request failed";
+
+        if (
+          !/429|503|500|timeout|overloaded|resource_exhausted|unavailable|temporar|not found/i.test(
+            message,
+          )
+        ) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError || new Error("No Gemini model responded successfully");
   } catch (error) {
-    console.error("GEMINI ERROR:");
-    console.error(error);
+    const message = error?.message || "Gemini request failed";
+    const retryable =
+      /429|503|500|timeout|overloaded|resource_exhausted|unavailable|temporar|not found/i.test(
+        message,
+      );
 
-    throw new Error("Gemini AI Error");
+    if (retryable && attempt < 2) {
+      const waitTime = 1000 * (attempt + 1) * 2;
+      console.warn(`Gemini retry ${attempt + 1}/3 in ${waitTime}ms`);
+      await sleep(waitTime);
+      return analyzeResume(resumeText, jobDescription, attempt + 1);
+    }
+
+    console.error("GEMINI ERROR:");
+    console.error(message);
+
+    throw new Error(
+      "Gemini AI Error. Please try again after a moment. If it keeps failing, refresh the API key or use another supported model.",
+    );
   }
 };
 
