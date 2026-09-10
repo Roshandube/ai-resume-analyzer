@@ -33,8 +33,11 @@ const analyzeResume = async (req, res) => {
     const { resumeId } = req.params;
     const { jobDescription = "" } = req.body;
 
-    // Find Resume
-    const resume = await Resume.findById(resumeId);
+    // Find Resume (scoped to the logged-in user to prevent IDOR)
+    const resume = await Resume.findOne({
+      _id: resumeId,
+      user: req.user.userId,
+    });
 
     if (!resume) {
       return res.status(404).json({

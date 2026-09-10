@@ -21,8 +21,24 @@ const storage = multer.diskStorage({
   },
 });
 
+const fileFilter = (req, file, cb) => {
+  const isPdf =
+    file.mimetype === "application/pdf" &&
+    path.extname(file.originalname).toLowerCase() === ".pdf";
+
+  if (!isPdf) {
+    return cb(new Error("Only PDF files are allowed"));
+  }
+
+  cb(null, true);
+};
+
 const upload = multer({
   storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
 });
 
 module.exports = upload;
