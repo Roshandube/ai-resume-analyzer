@@ -1,5 +1,9 @@
 # AI Resume Analyzer
 
+<p align="center">
+  <img src="./screenshots/app-preview.png" alt="AI Resume Analyzer Screenshot" width="900" />
+</p>
+
 A full-stack AI-powered resume analysis application that evaluates resume quality, provides an ATS-readiness score, and compares resumes against job descriptions using Google Gemini AI.
 
 ## Features
